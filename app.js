@@ -3,16 +3,7 @@
 ───────────────────────────────────────── */
 
 let units = [
-  // Weight
-  "KG","Gram","Pound","Ounce","Metric Ton",
-  // Volume
-  "Liter","Milliliter","Gallon","Fluid oz","Cup","Tablespoon","Teaspoon",
-  // Length
-  "Meter","Centimeter","Millimeter","Kilometer","Inch","Foot","Yard","Mile",
-  // Area
-  "sq Meter","sq Foot","sq Inch","sq Yard","Hectare","Acre",
-  // Count / Packaging
-  "Piece","Dozen","Gross","Pack","Box","CTN","Pallet","Case","Bag","Roll","Set","Bundle"
+  "PC","CTN","BAG","BGS","PAL","KG"
 ];
 
 /* ── Selects ── */
