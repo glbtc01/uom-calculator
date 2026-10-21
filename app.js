@@ -3,8 +3,44 @@
 ───────────────────────────────────────── */
 
 let units = [
-  "PC","CTN","BAG","BGS","PAL","KG"
+  "BOX","CTN","CON","JRC","KG","PAL","PC","SHB","SHU","SLU","SMU"
 ];
+
+let uomEnabled = true;
+
+/* ── UOM Toggle ── */
+function toggleUom() {
+  uomEnabled = !uomEnabled;
+  applyUomMode();
+  try { localStorage.setItem('uom-enabled', uomEnabled ? '1' : '0'); } catch(e) {}
+}
+
+function applyUomMode() {
+  const btn = document.getElementById('uomToggle');
+
+  // Show/hide all .uom-only elements
+  document.querySelectorAll('.uom-only').forEach(el => {
+    el.style.display = uomEnabled ? '' : 'none';
+  });
+
+  // Swap conv-grid layout: with UOM = 7-col, without = 2 inputs side by side
+  const grid = document.getElementById('convGrid');
+  if (uomEnabled) {
+    grid.classList.remove('no-uom');
+    document.getElementById('fromVal').placeholder = 'Denominator';
+    document.getElementById('toVal').placeholder   = 'Numerator';
+  } else {
+    grid.classList.add('no-uom');
+    document.getElementById('fromVal').placeholder = 'Denominator';
+    document.getElementById('toVal').placeholder   = 'Numerator';
+  }
+
+  // Pill active = UOM is HIDDEN (toggle to hide)
+  if (uomEnabled) btn.classList.remove('active');
+  else            btn.classList.add('active');
+
+  calc();
+}
 
 /* ── Selects ── */
 function populateSelects() {
@@ -28,24 +64,7 @@ function syncCustTag() {
 }
 
 /* ── Calculation ── */
-function updateRatioHint() {
-  const fv = parseFloat(document.getElementById('fromVal').value);
-  const tv = parseFloat(document.getElementById('toVal').value);
-  const fu = document.getElementById('fromUom').value;
-  const tu = document.getElementById('toUom').value;
-  if (isNaN(fv) || isNaN(tv) || fv === 0) {
-    document.getElementById('ratioHint').innerHTML = '';
-    return;
-  }
-  const ratio = +(tv / fv).toFixed(8);
-  document.getElementById('ratioHint').innerHTML =
-    `<span class="rh-num">${fv}</span> <span class="rh-uom">${fu}</span>`
-    + ` <span class="rh-eq">=</span> `
-    + `<span class="rh-num">${ratio}</span> <span class="rh-uom">${tu}</span>`;
-}
-
 function calc() {
-  updateRatioHint();
 
   const fromVal = parseFloat(document.getElementById('fromVal').value);
   const toVal   = parseFloat(document.getElementById('toVal').value);
@@ -67,12 +86,18 @@ function calc() {
   const ansVal = custQty / ratio;
   const display = +ansVal.toFixed(6);
 
-  resultLine.innerHTML =
-    `<span class="r-qty">${custQty}</span>&nbsp;<span class="r-uom">${toUom}</span>` +
-    `<span class="r-eq">=</span>` +
-    `<span class="r-ans">${display}</span>&nbsp;<span class="r-auom">${fromUom}</span>`;
+  if (uomEnabled) {
+    resultLine.innerHTML =
+      `<span class="r-qty">${custQty}</span>&nbsp;<span class="r-uom">${toUom}</span>` +
+      `<span class="r-eq">=</span>` +
+      `<span class="r-ans">${display}</span>&nbsp;<span class="r-auom">${fromUom}</span>`;
+  } else {
+    resultLine.innerHTML =
+      `<span class="r-qty">${custQty}</span>` +
+      `<span class="r-eq">=</span>` +
+      `<span class="r-ans">${display}</span>`;
+  }
 
-  // Warn if result is not a whole number
   const eps = 1e-9;
   warnBox.classList.toggle('show', Math.abs(ansVal - Math.round(ansVal)) > eps);
 }
@@ -86,25 +111,62 @@ function calc() {
 );
 document.getElementById('custQty').addEventListener('input', calc);
 
-/* ── Modal ── */
+/* ── Hamburger / Side Menu ── */
+function toggleMenu() {
+  const menu    = document.getElementById('sideMenu');
+  const backdrop = document.getElementById('menuBackdrop');
+  const isOpen  = menu.classList.contains('open');
+  if (isOpen) closeMenu();
+  else {
+    menu.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    disableHamburger();
+  }
+}
+
+function closeMenu() {
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('menuBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  enableHamburger();
+}
+
+/* ── Dark Mode ── */
+function toggleTheme() {
+  const html   = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('darkToggle').classList.toggle('active', !isDark);
+  try { localStorage.setItem('uom-theme', isDark ? 'light' : 'dark'); } catch(e) {}
+}
+
+/* ── Manage Units Modal ── */
+function disableHamburger() {
+  document.getElementById('hamburgerBtn').classList.add('disabled');
+}
+function enableHamburger() {
+  document.getElementById('hamburgerBtn').classList.remove('disabled');
+}
+
 function openManage() {
   renderGrid();
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  disableHamburger();
 }
 
 function closeManage() {
   document.getElementById('modalOverlay').classList.remove('open');
   document.body.style.overflow = '';
   populateSelects();
+  enableHamburger();
 }
 
-// Close on backdrop tap
-document.getElementById('modalOverlay').addEventListener('click', function (e) {
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeManage();
 });
 
-// Swipe down to close on mobile
 let touchStartY = 0;
 document.getElementById('modalBox').addEventListener('touchstart', e => {
   touchStartY = e.touches[0].clientY;
@@ -122,7 +184,12 @@ function dragHandle() {
   </div>`;
 }
 
+function saveUnits() {
+  try { localStorage.setItem('uom-units', JSON.stringify(units)); } catch(e) {}
+}
+
 function renderGrid() {
+  saveUnits();
   const grid = document.getElementById('uomGrid');
   grid.innerHTML = units.map((u, i) => `
     <div class="uom-item" draggable="true" data-idx="${i}">
@@ -132,7 +199,6 @@ function renderGrid() {
     </div>`
   ).join('');
 
-  /* Desktop drag-and-drop */
   grid.querySelectorAll('.uom-item').forEach(el => {
     el.addEventListener('dragstart', e => {
       dragSrcIdx = parseInt(el.dataset.idx);
@@ -159,7 +225,6 @@ function renderGrid() {
     });
   });
 
-  /* Delete buttons */
   grid.querySelectorAll('.del-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       units.splice(parseInt(btn.dataset.idx), 1);
@@ -167,7 +232,6 @@ function renderGrid() {
     });
   });
 
-  /* Touch drag-and-drop */
   let touchClone = null, touchOrigIdx = null;
   grid.querySelectorAll('.drag-handle').forEach(handle => {
     handle.addEventListener('touchstart', e => {
@@ -214,7 +278,7 @@ function renderGrid() {
   });
 }
 
-/* ── Add / Remove Units ── */
+/* ── Add Unit ── */
 function addUnit() {
   const inp  = document.getElementById('newUomInput');
   const name = inp.value.trim();
@@ -227,15 +291,6 @@ document.getElementById('newUomInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addUnit();
 });
 
-/* ── Security: disable right-click & devtools shortcuts ── */
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('keydown', e => {
-  if (e.key === 'F12') { e.preventDefault(); return false; }
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey &&
-      ['I','i','J','j','C','c'].includes(e.key)) { e.preventDefault(); return false; }
-  if ((e.ctrlKey || e.metaKey) && ['U','u'].includes(e.key)) { e.preventDefault(); return false; }
-});
-
 /* ── Clear All ── */
 function clearAll() {
   document.getElementById('fromVal').value = '';
@@ -245,23 +300,32 @@ function clearAll() {
   calc();
 }
 
-/* ── Dark Mode ── */
-function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('themeIcon').textContent = isDark ? '🌙' : '☀️';
-  try { localStorage.setItem('uom-theme', isDark ? 'light' : 'dark'); } catch(e) {}
-}
+/* ── Security ── */
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12') { e.preventDefault(); return false; }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey &&
+      ['I','i','J','j','C','c'].includes(e.key)) { e.preventDefault(); return false; }
+  if ((e.ctrlKey || e.metaKey) && ['U','u'].includes(e.key)) { e.preventDefault(); return false; }
+});
 
 /* ── Init ── */
-// Restore saved theme
 try {
-  const saved = localStorage.getItem('uom-theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-    document.getElementById('themeIcon').textContent = saved === 'dark' ? '☀️' : '🌙';
+  const savedTheme = localStorage.getItem('uom-theme');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('darkToggle').classList.add('active');
+  }
+  const savedUom = localStorage.getItem('uom-enabled');
+  if (savedUom === '0') {
+    uomEnabled = false;
+  }
+  const savedUnits = localStorage.getItem('uom-units');
+  if (savedUnits) {
+    const parsed = JSON.parse(savedUnits);
+    if (Array.isArray(parsed) && parsed.length > 0) units = parsed;
   }
 } catch(e) {}
 
 populateSelects();
+applyUomMode();

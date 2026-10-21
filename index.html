@@ -3,17 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>UOM Calculator</title>
+  <title>CalcUOM</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="favicon-180.png" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<!-- Dark Mode Toggle -->
-<button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">
-  <span class="toggle-icon" id="themeIcon">🌙</span>
-  <div class="toggle-track"><div class="toggle-knob"></div></div>
+<!-- ── Hamburger Menu ── -->
+<button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()" aria-label="Open menu">
+  <span></span><span></span><span></span>
 </button>
+
+<!-- Side Menu Drawer -->
+<div class="menu-backdrop" id="menuBackdrop" onclick="closeMenu()"></div>
+<div class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    <span class="side-menu-title">Settings</span>
+    <button class="side-menu-close" onclick="closeMenu()">✕</button>
+  </div>
+
+  <!-- Dark Mode Toggle -->
+  <div class="menu-item">
+    <div class="menu-item-info">
+      <span class="menu-item-label">Dark Mode</span>
+      <span class="menu-item-desc">Switch to dark theme</span>
+    </div>
+    <button class="pill-toggle" id="darkToggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+      <div class="pill-knob"></div>
+    </button>
+  </div>
+
+  <!-- UOM Toggle -->
+  <div class="menu-item">
+    <div class="menu-item-info">
+      <span class="menu-item-label">Hide Units (UOM)</span>
+      <span class="menu-item-desc">Hide unit selectors</span>
+    </div>
+    <button class="pill-toggle" id="uomToggle" onclick="toggleUom()" aria-label="Toggle UOM">
+      <div class="pill-knob"></div>
+    </button>
+  </div>
+</div>
 
 <div class="page">
   <h1 class="page-title">UOM Calculator</h1>
@@ -21,16 +53,15 @@
   <!-- Card 1: Conversion Setup -->
   <div class="card">
     <div class="card-label">Conversion Setup</div>
-    <div class="conv-grid">
-      <input type="number" id="fromVal" min="0" step="any" inputmode="decimal" placeholder="From qty" />
-      <div class="conv-equals">&nbsp;</div>
-      <select id="fromUom"></select>
-      <span class="pipe-sep">|</span>
-      <input type="number" id="toVal" min="0" step="any" inputmode="decimal" placeholder="To qty" />
-      <div class="conv-equals">&nbsp;</div>
-      <select id="toUom"></select>
+    <div class="conv-grid" id="convGrid">
+      <input type="number" id="fromVal" min="0" step="any" inputmode="decimal" placeholder="Denominator" />
+      <div class="conv-equals uom-only">&nbsp;</div>
+      <select id="fromUom" class="uom-only"></select>
+      <span class="pipe-sep uom-only">|</span>
+      <input type="number" id="toVal" min="0" step="any" inputmode="decimal" placeholder="Numerator" />
+      <div class="conv-equals uom-only">&nbsp;</div>
+      <select id="toUom" class="uom-only"></select>
     </div>
-    <div class="ratio-hint" id="ratioHint"></div>
   </div>
 
   <!-- Card 2: Customer Quantity -->
@@ -38,7 +69,7 @@
     <div class="card-label">Customer Quantity</div>
     <div class="qty-grid">
       <input type="number" id="custQty" placeholder="Enter quantity" step="any" inputmode="decimal" />
-      <div class="uom-fixed-tag" id="custUomTag">—</div>
+      <div class="uom-fixed-tag uom-only" id="custUomTag">—</div>
     </div>
   </div>
 
@@ -56,7 +87,7 @@
 
   <!-- Actions -->
   <div class="actions">
-    <button class="btn" onclick="openManage()">
+    <button class="btn uom-only" onclick="openManage()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
@@ -72,7 +103,6 @@
     </button>
   </div>
 
-  <!-- Footer -->
   <p class="footer-copy">© AGB</p>
 </div>
 
@@ -85,7 +115,7 @@
       <div class="uom-sortable" id="uomGrid"></div>
     </div>
     <div class="modal-add-row">
-      <input type="text" id="newUomInput" placeholder="New unit" />
+      <input type="text" id="newUomInput" placeholder="New unit of measure" />
       <button class="btn primary" onclick="addUnit()">Add</button>
     </div>
     <div class="modal-footer">
