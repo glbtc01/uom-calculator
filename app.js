@@ -3,7 +3,7 @@
 ───────────────────────────────────────── */
 
 let units = [
-  "BOX","CTN","CON","JRC","KG","PAL","PC","SHB","SHU","SLU","SMU"
+  "BAG","BGS","BOX","CTN","CON","JRC","KG","PAL","PC","SHB","SHU","SLU","SMU"
 ];
 
 let uomEnabled = true;
